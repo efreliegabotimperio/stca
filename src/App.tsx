@@ -11,6 +11,7 @@ import {
   getStoredPackageHistory,
   savePackageToHistory,
   deletePackageFromHistory,
+  loadAllSettingsFromSupabase,
 } from './services/authService';
 import { runSTCAOrchestrator } from './services/stcaOrchestrator';
 import type { STCABlogPackage, UserSession } from './types/blog';
@@ -25,8 +26,12 @@ export function App() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isCanvaAudioOpen, setIsCanvaAudioOpen] = useState(false);
 
-  // Load history on mount & generate initial demo package if history is empty
+  // Load history & Supabase settings on mount & generate initial demo package if history is empty
   useEffect(() => {
+    loadAllSettingsFromSupabase().catch((err) =>
+      console.warn('Could not load Supabase settings on startup:', err)
+    );
+
     const loaded = getStoredPackageHistory();
     setHistory(loaded);
 
