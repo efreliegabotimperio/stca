@@ -25,7 +25,14 @@ CREATE POLICY "Allow public read/write to app_settings" ON public.app_settings
   USING (true)
   WITH CHECK (true);
 
--- Insert default row if it doesn't exist
+-- Insert or update default row with initial settings
 INSERT INTO public.app_settings (id, ai_provider, ai_model)
 VALUES ('default', 'openai', 'gpt-4o-mini')
 ON CONFLICT (id) DO NOTHING;
+
+-- Example: To manually update API keys via SQL Editor in Supabase:
+-- UPDATE public.app_settings 
+-- SET openai_api_key = 'your_openai_api_key_here',
+--     updated_at = NOW()
+-- WHERE id = 'default';
+
