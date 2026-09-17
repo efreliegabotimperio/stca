@@ -1,6 +1,7 @@
--- SQL Script: Setup app_settings table in Supabase for STCA App
+-- SQL Script: Setup app_settings & stca_packages tables in Supabase for STCA App
 -- Run this script in your Supabase SQL Editor: https://supabase.com/dashboard/project/pgshhvvngtlwmbitfnox/sql
 
+-- 1. App Settings Table
 CREATE TABLE IF NOT EXISTS public.app_settings (
   id TEXT PRIMARY KEY DEFAULT 'default',
   openai_api_key TEXT DEFAULT '',
@@ -12,27 +13,41 @@ CREATE TABLE IF NOT EXISTS public.app_settings (
   canva_design_urls JSONB DEFAULT '{}'::jsonb,
   custom_presenter_voices JSONB DEFAULT '{}'::jsonb,
   user_session JSONB DEFAULT '{}'::jsonb,
+  package_history JSONB DEFAULT '[]'::jsonb,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Enable Row Level Security (RLS)
+-- Ensure package_history column exists if table already existed
+ALTER TABLE public.app_settings ADD COLUMN IF NOT EXISTS package_history JSONB DEFAULT '[]'::jsonb;
+
+-- Enable Row Level Security (RLS) for app_settings
 ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 
--- Allow public read/write access for anon key
 DROP POLICY IF EXISTS "Allow public read/write to app_settings" ON public.app_settings;
 CREATE POLICY "Allow public read/write to app_settings" ON public.app_settings
   FOR ALL
   USING (true)
   WITH CHECK (true);
 
--- Insert or update default row with initial settings
+-- Insert initial default row
 INSERT INTO public.app_settings (id, ai_provider, ai_model)
 VALUES ('default', 'openai', 'gpt-4o-mini')
 ON CONFLICT (id) DO NOTHING;
 
--- Example: To manually update API keys via SQL Editor in Supabase:
--- UPDATE public.app_settings 
--- SET openai_api_key = 'your_openai_api_key_here',
---     updated_at = NOW()
--- WHERE id = 'default';
+-- 2. STCA Packages History Table
+CREATE TABLE IF NOT EXISTS public.stca_packages (
+  id TEXT PRIMARY KEY,
+  topic TEXT,
+  presenter_id TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  package_data JSONB NOT NULL
+);
 
+-- Enable RLS for stca_packages
+ALTER TABLE public.stca_packages ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow public read/write to stca_packages" ON public.stca_packages;
+CREATE POLICY "Allow public read/write to stca_packages" ON public.stca_packages
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);

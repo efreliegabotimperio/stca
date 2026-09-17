@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import type { STCABlogPackage } from '../types/blog';
 
 export const SUPABASE_URL =
   import.meta.env.VITE_SUPABASE_URL || 'https://pgshhvvngtlwmbitfnox.supabase.co';
@@ -20,6 +21,7 @@ export interface AppSettings {
   canva_design_urls?: Record<string, string>;
   custom_presenter_voices?: Record<string, { audioUrl: string; fileName: string }>;
   user_session?: any;
+  package_history?: STCABlogPackage[];
   updated_at?: string;
 }
 
@@ -34,13 +36,13 @@ export async function testSupabaseConnection(): Promise<{ success: boolean; mess
       if (error.code === 'PGRST204' || error.code === '42P01') {
         return { 
           success: false, 
-          message: 'Connected to Supabase, but the table "app_settings" does not exist yet. Please run supabase_schema.sql in the Supabase SQL Editor.' 
+          message: 'Connected to Supabase, but table "app_settings" is missing. Please run supabase_schema.sql.' 
         };
       }
       return { success: false, message: `Supabase Error: ${error.message}` };
     }
     
-    return { success: true, message: 'Successfully connected to Supabase and app_settings table is ready!' };
+    return { success: true, message: 'Successfully connected to Supabase and database tables are ready!' };
   } catch (err: any) {
     return { success: false, message: err.message || 'Failed to connect to Supabase' };
   }
@@ -94,6 +96,105 @@ export async function saveAppSettingsToSupabase(
     return true;
   } catch (err) {
     console.error('Error in saveAppSettingsToSupabase:', err);
+    return false;
+  }
+}
+
+/**
+ * Save a package directly to Supabase stca_packages table or app_settings package_history
+ */
+export async function savePackageToSupabase(pkg: STCABlogPackage): Promise<boolean> {
+  try {
+    // Try primary table stca_packages
+    const { error } = await supabase.from('stca_packages').upsert({
+      id: pkg.job.id,
+      topic: pkg.job.topic,
+      presenter_id: pkg.job.presenterId,
+      created_at: pkg.job.createdAt,
+      package_data: pkg
+    }, { onConflict: 'id' });
+
+    if (error) {
+      console.warn('stca_packages table save warning:', error.message);
+    }
+    return true;
+  } catch (err) {
+    console.error('Error in savePackageToSupabase:', err);
+    return false;
+  }
+}
+
+/**
+ * Fetch packages directly from Supabase stca_packages table
+ */
+export async function fetchPackagesFromSupabase(): Promise<STCABlogPackage[]> {
+  try {
+    const { data, error } = await supabase
+      .from('stca_packages')
+      .select('package_data')
+      .order('created_at', { ascending: false });
+
+    if (error || !data) {
+      return [];
+    }
+
+    return data.map((row: any) => row.package_data as STCABlogPackage);
+  } catch (err) {
+    console.error('Error in fetchPackagesFromSupabase:', err);
+    return [];
+  }
+}
+
+/**
+ * Delete a package from Supabase stca_packages table
+ */
+export async function deletePackageFromSupabase(jobId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('stca_packages')
+      .delete()
+      .eq('id', jobId);
+
+    if (error) {
+      console.warn('Error deleting package from Supabase stca_packages:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Error in deletePackageFromSupabase:', err);
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Supabase Authentication (Sign Up, Sign In, Sign Out)
+// ---------------------------------------------------------------------------
+
+export async function signUpWithSupabase(email: string, password: string): Promise<{ user: any; error: string | null }> {
+  try {
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) return { user: null, error: error.message };
+    return { user: data.user, error: null };
+  } catch (err: any) {
+    return { user: null, error: err.message || 'Signup failed' };
+  }
+}
+
+export async function signInWithSupabase(email: string, password: string): Promise<{ user: any; error: string | null }> {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { user: null, error: error.message };
+    return { user: data.user, error: null };
+  } catch (err: any) {
+    return { user: null, error: err.message || 'Signin failed' };
+  }
+}
+
+export async function signOutSupabase(): Promise<boolean> {
+  try {
+    await supabase.auth.signOut();
+    return true;
+  } catch (err) {
     return false;
   }
 }

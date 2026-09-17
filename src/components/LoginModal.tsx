@@ -10,7 +10,9 @@ import {
   saveClaudeKey,
   getStoredOpenAIKey,
   saveOpenAIKey,
+  syncAllSettingsToSupabase,
 } from '../services/authService';
+import { signUpWithSupabase, signInWithSupabase } from '../services/supabaseService';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -28,6 +30,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [activeTab, setActiveTab] = useState<'profile' | 'ai'>('profile');
   const [username, setUsername] = useState(currentUser.username);
   const [email, setEmail] = useState(currentUser.email);
+  const [password, setPassword] = useState('');
+  const [authMode, setAuthMode] = useState<'save' | 'login' | 'signup'>('save');
+  const [authMessage, setAuthMessage] = useState<string | null>(null);
 
   // AI settings
   const [provider, setProvider] = useState<'openai' | 'claude'>(getStoredAIProvider());
@@ -39,24 +44,47 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSaveUser({
+    setAuthMessage(null);
+
+    if (authMode === 'signup' && password) {
+      const res = await signUpWithSupabase(email, password);
+      if (res.error) {
+        setAuthMessage(`Signup note: ${res.error}`);
+      } else {
+        setAuthMessage('Account created successfully on Supabase!');
+      }
+    } else if (authMode === 'login' && password) {
+      const res = await signInWithSupabase(email, password);
+      if (res.error) {
+        setAuthMessage(`Login note: ${res.error}`);
+      } else {
+        setAuthMessage('Authenticated with Supabase!');
+      }
+    }
+
+    const updatedSession = {
       ...currentUser,
       username: username || 'STCA Operator',
       email: email || 'operator@stcastudios.com',
       isLoggedIn: true,
-    });
+    };
+
+    onSaveUser(updatedSession);
     saveAIProvider(provider);
     saveAIModel(model);
     saveOpenAIKey(openAIKey);
     saveClaudeKey(claudeKey);
 
+    // Save everything to Supabase DB
+    await syncAllSettingsToSupabase();
+
     setSavedSuccess(true);
     setTimeout(() => {
       setSavedSuccess(false);
       onClose();
-    }, 800);
+    }, 1000);
   };
 
   return (
@@ -150,6 +178,64 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     />
                   </div>
                 </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">
+                    Account Password <span className="text-slate-500 font-normal">(Optional for Supabase Auth)</span>
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-9 pr-4 py-2 bg-slate-900/90 border border-slate-700/80 rounded-lg text-sm text-slate-100 focus:outline-none focus:border-amber-500 transition"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex space-x-2 text-[11px] pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode('save')}
+                    className={`px-2.5 py-1 rounded-md border font-semibold ${
+                      authMode === 'save'
+                        ? 'bg-slate-800 border-amber-500/50 text-amber-300'
+                        : 'border-slate-800 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Save & Sync DB
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode('login')}
+                    className={`px-2.5 py-1 rounded-md border font-semibold ${
+                      authMode === 'login'
+                        ? 'bg-slate-800 border-emerald-500/50 text-emerald-300'
+                        : 'border-slate-800 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Login Account
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode('signup')}
+                    className={`px-2.5 py-1 rounded-md border font-semibold ${
+                      authMode === 'signup'
+                        ? 'bg-slate-800 border-blue-500/50 text-blue-300'
+                        : 'border-slate-800 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Create Account
+                  </button>
+                </div>
+
+                {authMessage && (
+                  <p className="text-xs text-amber-400 font-medium bg-amber-500/10 p-2 rounded border border-amber-500/20">
+                    {authMessage}
+                  </p>
+                )}
               </div>
             ) : (
               <div className="space-y-4">

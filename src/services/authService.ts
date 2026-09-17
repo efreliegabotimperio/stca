@@ -257,6 +257,15 @@ export function savePackageToHistory(pkg: STCABlogPackage): STCABlogPackage[] {
   } catch (e) {
     console.error('Error saving history item:', e);
   }
+
+  // Asynchronously sync to Supabase database
+  savePackageToSupabase(pkg).catch((err) =>
+    console.warn('Could not save package to Supabase:', err)
+  );
+  syncAllSettingsToSupabase().catch((err) =>
+    console.warn('Could not sync settings to Supabase:', err)
+  );
+
   return updated;
 }
 
@@ -268,11 +277,27 @@ export function deletePackageFromHistory(jobId: string): STCABlogPackage[] {
   } catch (e) {
     console.error('Error deleting history item:', e);
   }
+
+  // Asynchronously remove from Supabase database
+  deletePackageFromSupabase(jobId).catch((err) =>
+    console.warn('Could not delete package from Supabase:', err)
+  );
+  syncAllSettingsToSupabase().catch((err) =>
+    console.warn('Could not sync settings to Supabase:', err)
+  );
+
   return updated;
 }
 
 // Sync all app settings to and from Supabase
-import { fetchAppSettingsFromSupabase, saveAppSettingsToSupabase, type AppSettings } from './supabaseService';
+import {
+  fetchAppSettingsFromSupabase,
+  saveAppSettingsToSupabase,
+  savePackageToSupabase,
+  fetchPackagesFromSupabase,
+  deletePackageFromSupabase,
+  type AppSettings,
+} from './supabaseService';
 
 export function getAllLocalSettings(): AppSettings {
   return {
@@ -282,6 +307,7 @@ export function getAllLocalSettings(): AppSettings {
     ai_provider: getStoredAIProvider(),
     ai_model: getStoredAIModel(),
     user_session: getStoredUserSession(),
+    package_history: getStoredPackageHistory(),
   };
 }
 
@@ -292,14 +318,33 @@ export async function syncAllSettingsToSupabase(settingsId: string = 'default'):
 
 export async function loadAllSettingsFromSupabase(settingsId: string = 'default'): Promise<boolean> {
   const remoteSettings = await fetchAppSettingsFromSupabase(settingsId);
-  if (!remoteSettings) return false;
+  
+  // Try fetching dedicated stca_packages
+  const remotePackages = await fetchPackagesFromSupabase();
 
-  if (remoteSettings.openai_api_key) saveOpenAIKey(remoteSettings.openai_api_key);
-  if (remoteSettings.claude_api_key) saveClaudeKey(remoteSettings.claude_api_key);
-  if (remoteSettings.elevenlabs_api_key) saveElevenLabsKey(remoteSettings.elevenlabs_api_key);
-  if (remoteSettings.ai_provider) saveAIProvider(remoteSettings.ai_provider);
-  if (remoteSettings.ai_model) saveAIModel(remoteSettings.ai_model);
-  if (remoteSettings.user_session) saveUserSession(remoteSettings.user_session);
+  if (!remoteSettings && remotePackages.length === 0) return false;
+
+  if (remoteSettings) {
+    if (remoteSettings.openai_api_key) saveOpenAIKey(remoteSettings.openai_api_key);
+    if (remoteSettings.claude_api_key) saveClaudeKey(remoteSettings.claude_api_key);
+    if (remoteSettings.elevenlabs_api_key) saveElevenLabsKey(remoteSettings.elevenlabs_api_key);
+    if (remoteSettings.ai_provider) saveAIProvider(remoteSettings.ai_provider);
+    if (remoteSettings.ai_model) saveAIModel(remoteSettings.ai_model);
+    if (remoteSettings.user_session) saveUserSession(remoteSettings.user_session);
+  }
+
+  // Merge packages from stca_packages table or app_settings package_history
+  const combinedPackages = remotePackages.length > 0
+    ? remotePackages
+    : (remoteSettings?.package_history || []);
+
+  if (combinedPackages.length > 0) {
+    try {
+      localStorage.setItem(PACKAGE_HISTORY_KEY, JSON.stringify(combinedPackages));
+    } catch (e) {
+      console.error('Error storing downloaded package history:', e);
+    }
+  }
 
   return true;
 }
