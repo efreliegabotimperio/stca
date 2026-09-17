@@ -270,3 +270,37 @@ export function deletePackageFromHistory(jobId: string): STCABlogPackage[] {
   }
   return updated;
 }
+
+// Sync all app settings to and from Supabase
+import { fetchAppSettingsFromSupabase, saveAppSettingsToSupabase, type AppSettings } from './supabaseService';
+
+export function getAllLocalSettings(): AppSettings {
+  return {
+    openai_api_key: getStoredOpenAIKey(),
+    claude_api_key: getStoredClaudeKey(),
+    elevenlabs_api_key: getStoredElevenLabsKey(),
+    ai_provider: getStoredAIProvider(),
+    ai_model: getStoredAIModel(),
+    user_session: getStoredUserSession(),
+  };
+}
+
+export async function syncAllSettingsToSupabase(settingsId: string = 'default'): Promise<boolean> {
+  const currentSettings = getAllLocalSettings();
+  return await saveAppSettingsToSupabase(currentSettings, settingsId);
+}
+
+export async function loadAllSettingsFromSupabase(settingsId: string = 'default'): Promise<boolean> {
+  const remoteSettings = await fetchAppSettingsFromSupabase(settingsId);
+  if (!remoteSettings) return false;
+
+  if (remoteSettings.openai_api_key) saveOpenAIKey(remoteSettings.openai_api_key);
+  if (remoteSettings.claude_api_key) saveClaudeKey(remoteSettings.claude_api_key);
+  if (remoteSettings.elevenlabs_api_key) saveElevenLabsKey(remoteSettings.elevenlabs_api_key);
+  if (remoteSettings.ai_provider) saveAIProvider(remoteSettings.ai_provider);
+  if (remoteSettings.ai_model) saveAIModel(remoteSettings.ai_model);
+  if (remoteSettings.user_session) saveUserSession(remoteSettings.user_session);
+
+  return true;
+}
+
