@@ -204,21 +204,20 @@ export function removeStoredCustomVoice(presenterId: string): void {
   }
 }
 
-export function getStoredUserSession(): UserSession {
+export function getStoredUserSession(): UserSession | null {
   try {
     const raw = localStorage.getItem(USER_SESSION_KEY);
     if (raw) {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.isLoggedIn) {
+        if (!parsed.role) parsed.role = 'standard user';
+        return parsed;
+      }
     }
   } catch (e) {
     console.error('Error loading session:', e);
   }
-  return {
-    id: 'user-001',
-    username: 'STCA Operator',
-    email: 'operator@stcastudios.com',
-    isLoggedIn: true,
-  };
+  return null;
 }
 
 export function saveUserSession(session: UserSession): void {
@@ -228,6 +227,15 @@ export function saveUserSession(session: UserSession): void {
     console.error('Error saving session:', e);
   }
 }
+
+export function clearUserSession(): void {
+  try {
+    localStorage.removeItem(USER_SESSION_KEY);
+  } catch (e) {
+    console.error('Error clearing session:', e);
+  }
+}
+
 
 export function getStoredPackageHistory(): STCABlogPackage[] {
   try {
@@ -330,13 +338,13 @@ export async function loadAllSettingsFromSupabase(settingsId: string = 'default'
     if (remoteSettings.elevenlabs_api_key) saveElevenLabsKey(remoteSettings.elevenlabs_api_key);
     if (remoteSettings.ai_provider) saveAIProvider(remoteSettings.ai_provider);
     if (remoteSettings.ai_model) saveAIModel(remoteSettings.ai_model);
-    if (remoteSettings.user_session) saveUserSession(remoteSettings.user_session);
   }
 
+
   // Merge packages from stca_packages table or app_settings package_history
-  const combinedPackages = remotePackages.length > 0
-    ? remotePackages
-    : (remoteSettings?.package_history || []);
+  const combinedPackages = (
+    remotePackages.length > 0 ? remotePackages : remoteSettings?.package_history || []
+  ).filter((pkg) => pkg.job?.id !== 'STCA-DEMO-001' && pkg.userId !== 'demo-user');
 
   if (combinedPackages.length > 0) {
     try {

@@ -87,7 +87,7 @@ export const PackageViewer: React.FC<PackageViewerProps> = ({
   ] as const;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 py-4 animate-in fade-in duration-300">
+    <div className="w-full space-y-6 py-4 animate-in fade-in duration-300">
       {/* Top Banner Card */}
       <div className="glass-panel border-amber-500/30 rounded-3xl p-6 relative overflow-hidden bg-slate-900/90">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

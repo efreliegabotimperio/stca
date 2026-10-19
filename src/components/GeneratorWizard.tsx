@@ -10,6 +10,7 @@ import { APPROVED_PRESENTERS } from '../data/presenters';
 import { runSTCAOrchestrator } from '../services/stcaOrchestrator';
 
 interface GeneratorWizardProps {
+  currentUser?: import('../types/blog').UserSession | null;
   onPackageGenerated: (pkg: STCABlogPackage) => void;
 }
 
@@ -21,7 +22,7 @@ const PRESET_TOPICS = [
   'Field Operations: Reducing Equipment Downtime',
 ];
 
-export const GeneratorWizard: React.FC<GeneratorWizardProps> = ({ onPackageGenerated }) => {
+export const GeneratorWizard: React.FC<GeneratorWizardProps> = ({ currentUser, onPackageGenerated }) => {
   const [topic, setTopic] = useState('');
   const [selectedPresenterId, setSelectedPresenterId] = useState('tool-cowboy');
   const [targetLength, setTargetLength] = useState<JobInputs['targetLength']>('Standard (1500-2000w)');
@@ -55,6 +56,10 @@ export const GeneratorWizard: React.FC<GeneratorWizardProps> = ({ onPackageGener
       canvaTemplateId: 'STCA-CANVA-MASTER-BLOG-2026',
       voiceId: selectedPresenter.masterVoiceId,
       status: 'PROCESSING',
+      userId: currentUser?.id,
+      userEmail: currentUser?.email,
+      userName: currentUser?.username,
+      userRole: currentUser?.role || 'standard user',
     };
 
     try {
@@ -62,6 +67,15 @@ export const GeneratorWizard: React.FC<GeneratorWizardProps> = ({ onPackageGener
         setCurrentPhaseIndex(phaseIdx);
         setCurrentPhaseText(phaseText);
       });
+
+      generatedPackage.userEmail = currentUser?.email;
+      generatedPackage.userRole = currentUser?.role || 'standard user';
+      generatedPackage.userName = currentUser?.username;
+      generatedPackage.userId = currentUser?.id;
+      generatedPackage.job.userEmail = currentUser?.email;
+      generatedPackage.job.userRole = currentUser?.role || 'standard user';
+      generatedPackage.job.userName = currentUser?.username;
+      generatedPackage.job.userId = currentUser?.id;
 
       setIsGenerating(false);
       onPackageGenerated(generatedPackage);
@@ -72,7 +86,7 @@ export const GeneratorWizard: React.FC<GeneratorWizardProps> = ({ onPackageGener
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 py-6">
+    <div className="max-w-5xl mx-auto space-y-8 py-6">
       {/* Header Banner */}
       <div className="glass-panel border-amber-500/30 rounded-3xl p-6 sm:p-8 relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/40">
         <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />

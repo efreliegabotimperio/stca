@@ -1,12 +1,12 @@
-import React from 'react';
 import {
   History,
   User,
+  Users,
   ExternalLink,
   Bot,
   PlusCircle,
-  ShieldCheck,
   Zap,
+  LogOut,
 } from 'lucide-react';
 import type { UserSession } from '../types/blog';
 
@@ -16,7 +16,10 @@ interface NavbarProps {
   onOpenLogin: () => void;
   onOpenHistory: () => void;
   onNewGenerator: () => void;
+  onOpenUserManagement: () => void;
+  onLogout: () => void;
 }
+
 
 export const Navbar: React.FC<NavbarProps> = ({
   user,
@@ -24,10 +27,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenLogin,
   onOpenHistory,
   onNewGenerator,
+  onOpenUserManagement,
+  onLogout,
 }) => {
+
+
   return (
     <header className="sticky top-0 z-40 glass-panel border-b border-slate-800/80 bg-slate-950/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Left: Brand Identity */}
         <div className="flex items-center space-x-3 cursor-pointer" onClick={onNewGenerator}>
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-600 to-yellow-400 p-0.5 shadow-lg shadow-amber-500/20">
@@ -89,16 +96,86 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </button>
 
-          {/* User Account / Login */}
+          {/* User Management / Account Info Trigger */}
           <button
-            onClick={onOpenLogin}
-            className="flex items-center space-x-2 px-3 py-2 text-xs sm:text-sm font-medium text-slate-300 bg-slate-900/80 hover:bg-slate-800 border border-slate-800 rounded-lg transition"
+            onClick={onOpenUserManagement}
+            className={`flex items-center space-x-1.5 px-3 py-2 text-xs sm:text-sm font-medium rounded-lg border transition ${
+              user.role === 'superadmin'
+                ? 'text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/30'
+                : user.role === 'admin'
+                ? 'text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/30'
+                : 'text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/30'
+            }`}
+            title={
+              user.role === 'superadmin'
+                ? 'User Management (All Users & RBAC)'
+                : user.role === 'admin'
+                ? 'Team Management (Standard Users)'
+                : 'My Account Information'
+            }
           >
-            <User className="w-4 h-4 text-slate-400" />
-            <span className="hidden md:inline max-w-[100px] truncate">{user.username}</span>
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 hidden sm:inline" />
+            {user.role === 'superadmin' ? (
+              <Users className="w-4 h-4 text-amber-400" />
+            ) : user.role === 'admin' ? (
+              <Users className="w-4 h-4 text-blue-400" />
+            ) : (
+              <User className="w-4 h-4 text-emerald-400" />
+            )}
+            <span className="hidden sm:inline">
+              {user.role === 'superadmin'
+                ? 'Users'
+                : user.role === 'admin'
+                ? 'Team'
+                : 'Account Info'}
+            </span>
+          </button>
+
+          {/* User Account / Profile & Status Indicator */}
+          {user.role === 'superadmin' ? (
+            <button
+              onClick={onOpenLogin}
+              title="SuperAdmin Settings (AI Models & API Keys)"
+              className="flex items-center space-x-2 px-3 py-2 text-xs sm:text-sm font-medium text-slate-300 bg-slate-900/80 hover:bg-slate-800 border border-amber-500/30 rounded-lg transition"
+            >
+              <User className="w-4 h-4 text-amber-400" />
+              <span className="hidden md:inline max-w-[100px] truncate text-slate-200">{user.username}</span>
+              <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                SUPERADMIN
+              </span>
+            </button>
+          ) : (
+            <div
+              title={`Active session: ${user.username} (${user.role})`}
+              className="flex items-center space-x-2 px-3 py-2 text-xs sm:text-sm font-medium text-slate-300 bg-slate-900/80 border border-slate-800 rounded-lg select-none"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <User className="w-3.5 h-3.5 text-slate-400" />
+              <span className="hidden md:inline max-w-[100px] truncate text-slate-200">{user.username}</span>
+              {user.role === 'admin' ? (
+                <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[9px] font-bold rounded bg-blue-500/20 text-blue-300 border border-blue-500/40">
+                  ADMIN
+                </span>
+              ) : (
+                <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[9px] font-bold rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                  STANDARD
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Log Out Button */}
+          <button
+            onClick={onLogout}
+            title="Log out of session"
+            className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 border border-slate-800 hover:border-red-500/30 rounded-lg transition"
+          >
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
+
       </div>
     </header>
   );

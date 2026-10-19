@@ -1,3 +1,5 @@
+export type UserRole = 'superadmin' | 'admin' | 'standard user';
+
 export interface PresenterProfile {
   id: string;
   name: string;
@@ -31,6 +33,10 @@ export interface JobInputs {
   canvaTemplateId?: string;
   voiceId?: string;
   status: 'DRAFT' | 'PROCESSING' | 'COMPLETED' | 'READY_FOR_PUBLISH' | 'FAILED';
+  userId?: string;
+  userEmail?: string;
+  userName?: string;
+  userRole?: UserRole;
 }
 
 export interface ResearchBrief {
@@ -160,11 +166,30 @@ export interface STCABlogPackage {
   socialRepurpose: SocialRepurpose;
   qaReport: QAReport;
   manifest: ManifestData;
+  userId?: string;
+  userEmail?: string;
+  userName?: string;
+  userRole?: UserRole;
+}
+
+export interface AppUser {
+  id: string;
+  email: string;
+  username: string;
+  full_name?: string;
+  avatar_url?: string;
+  role: UserRole;
+  status: 'active' | 'suspended' | 'pending';
+  created_at?: string;
+  updated_at?: string;
+  last_sign_in_at?: string;
 }
 
 export interface UserSession {
   id: string;
   username: string;
   email: string;
+  role?: UserRole;
   isLoggedIn: boolean;
 }
+
