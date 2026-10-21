@@ -6,6 +6,7 @@
     color: #f1f5f9;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     overflow-x: hidden;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
 }
 
@@ -68,4 +69,186 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #475569;
+}
+
+/* ==========================================================================
+   LIGHT MODE OVERRIDES
+   Activates cleanly when <html class="light"> or [data-theme="light"] is present
+   ========================================================================== */
+
+html.light {
+  color-scheme: light;
+}
+
+html.light body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/* Page background containers */
+html.light .bg-\[\#0b0f19\],
+html.light .bg-\[\#070b14\] {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Glass Panels in Light Mode */
+html.light .glass-panel {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+}
+
+html.light .glass-panel-amber {
+  background: rgba(254, 243, 199, 0.65);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  box-shadow: 0 4px 15px -2px rgba(245, 158, 11, 0.1);
+}
+
+html.light .glass-panel-blue {
+  background: rgba(239, 246, 255, 0.75);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* Header & Top Navigation */
+html.light header.bg-slate-950\/80 {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  border-bottom-color: rgba(226, 232, 240, 0.95) !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+}
+
+/* Base Cards & Modals: bg-slate-900 maps to white */
+html.light .bg-slate-900,
+html.light .bg-slate-900\/90,
+html.light .bg-slate-900\/80,
+html.light .bg-slate-900\/60 {
+  background-color: #ffffff;
+}
+
+/* Deeper Panels & Card Insets */
+html.light .bg-slate-950,
+html.light .bg-slate-950\/80,
+html.light .bg-slate-950\/70,
+html.light .bg-slate-950\/60,
+html.light .bg-slate-950\/50,
+html.light .bg-slate-950\/40 {
+  background-color: #f8fafc;
+}
+
+/* Secondary Panels, Pills, Chips, Input Backgrounds */
+html.light .bg-slate-800,
+html.light .bg-slate-800\/80,
+html.light .bg-slate-800\/60,
+html.light .bg-slate-800\/50,
+html.light .bg-slate-800\/30 {
+  background-color: #f1f5f9;
+}
+
+html.light .bg-slate-700,
+html.light .bg-slate-700\/80,
+html.light .bg-slate-700\/60 {
+  background-color: #e2e8f0;
+}
+
+/* Interactive Hover Background States */
+html.light .hover\:bg-slate-800:hover {
+  background-color: #e2e8f0 !important;
+}
+
+html.light .hover\:bg-slate-700:hover,
+html.light .hover\:bg-slate-700\/80:hover {
+  background-color: #cbd5e1 !important;
+}
+
+html.light .hover\:bg-slate-900:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Borders in Light Mode */
+html.light .border-slate-800,
+html.light .border-slate-800\/80,
+html.light .border-slate-800\/90,
+html.light .border-slate-700,
+html.light .border-slate-700\/80,
+html.light .border-slate-700\/60 {
+  border-color: #e2e8f0;
+}
+
+/* High-Contrast Crisp Typography */
+html.light .text-slate-100 {
+  color: #0f172a;
+}
+
+html.light .text-slate-200 {
+  color: #1e293b;
+}
+
+html.light .text-slate-300 {
+  color: #334155;
+}
+
+html.light .text-slate-400 {
+  color: #475569;
+}
+
+html.light .text-slate-500 {
+  color: #64748b;
+}
+
+/* Text Hover Colors */
+html.light .hover\:text-slate-100:hover {
+  color: #020617;
+}
+
+html.light .hover\:text-slate-200:hover {
+  color: #0f172a;
+}
+
+html.light .hover\:text-slate-300:hover {
+  color: #1e293b;
+}
+
+/* Inputs, Textareas, and Selects */
+html.light input:not([type="checkbox"]):not([type="radio"]),
+html.light textarea,
+html.light select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Modal overlay backgrounds */
+html.light .fixed.inset-0.bg-slate-950\/85,
+html.light .fixed.inset-0.bg-slate-950\/80,
+html.light .fixed.inset-0.bg-slate-950\/70 {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+}
+
+/* Scrollbars in Light Mode */
+html.light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Selection in Light Mode */
+html.light ::selection {
+  background-color: rgba(245, 158, 11, 0.25);
+  color: #92400e;
 }

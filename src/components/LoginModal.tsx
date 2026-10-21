@@ -9,6 +9,8 @@ import {
   LogOut,
   Sparkles,
   CheckCircle2,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import type { UserSession, UserRole } from '../types/blog';
 import {
@@ -22,10 +24,13 @@ import {
   saveOpenAIKey,
   syncAllSettingsToSupabase,
 } from '../services/authService';
+import { getStoredTheme, saveTheme, type AppTheme } from '../services/themeService';
 
 interface LoginModalProps {
   isOpen: boolean;
   currentUser: UserSession;
+  currentTheme?: AppTheme;
+  onThemeChange?: (theme: AppTheme) => void;
   onClose: () => void;
   onSaveUser: (session: UserSession) => void;
   onLogout: () => void;
@@ -34,6 +39,8 @@ interface LoginModalProps {
 export const LoginModal: React.FC<LoginModalProps> = ({
   isOpen,
   currentUser,
+  currentTheme,
+  onThemeChange,
   onClose,
   onSaveUser,
   onLogout,
@@ -42,6 +49,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const canManageAIKeys = currentUser.role === 'superadmin';
 
   const [activeTab, setActiveTab] = useState<'profile' | 'ai'>('profile');
+  const [selectedTheme, setSelectedTheme] = useState<AppTheme>(currentTheme || getStoredTheme());
   const [username, setUsername] = useState(currentUser.username);
   const [email, setEmail] = useState(currentUser.email);
   const [role, setRole] = useState<UserRole>(currentUser.role || 'standard user');
@@ -59,9 +67,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       setUsername(currentUser.username);
       setEmail(currentUser.email);
       setRole(currentUser.role || 'standard user');
+      setSelectedTheme(currentTheme || getStoredTheme());
       setActiveTab('profile');
     }
-  }, [isOpen, currentUser]);
+  }, [isOpen, currentUser, currentTheme]);
+
+  const handleThemeSelect = (newTheme: AppTheme) => {
+    setSelectedTheme(newTheme);
+    saveTheme(newTheme);
+    if (onThemeChange) {
+      onThemeChange(newTheme);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -131,8 +148,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
         {/* Header */}
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
-            <Bot className="w-5 h-5 text-amber-400" />
+          <div className="w-10 h-10 rounded-xl bg-white/95 border border-amber-400/50 p-1 flex items-center justify-center shadow-md shadow-amber-500/10">
+            <img
+              src="https://assets.cdn.filesafe.space/cXVGcSjHPvm9Z4paH9gG/media/6a51c7bb708c41d4dfa93e71.webp"
+              alt="STCA Logo"
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/logo.webp';
+              }}
+            />
           </div>
           <div>
             <h3 className="text-lg font-bold text-slate-100">
@@ -229,6 +253,45 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                       className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-700/80 rounded-lg text-sm text-slate-100 focus:outline-none focus:border-amber-500 transition"
                       required
                     />
+                  </div>
+                </div>
+
+                {/* Theme & Appearance Configuration */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                    Studio Appearance & Theme
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleThemeSelect('dark')}
+                      className={`p-2.5 rounded-xl border flex items-center space-x-2.5 transition text-left cursor-pointer ${
+                        selectedTheme === 'dark'
+                          ? 'border-amber-500 bg-amber-500/10 text-amber-300 shadow-sm'
+                          : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <Moon className="w-4 h-4 text-amber-400 shrink-0" />
+                      <div>
+                        <div className="text-xs font-bold">Dark Mode</div>
+                        <div className="text-[10px] text-slate-400">Default dark studio</div>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleThemeSelect('light')}
+                      className={`p-2.5 rounded-xl border flex items-center space-x-2.5 transition text-left cursor-pointer ${
+                        selectedTheme === 'light'
+                          ? 'border-amber-500 bg-amber-500/10 text-amber-300 shadow-sm'
+                          : 'border-slate-800 bg-slate-950/60 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <Sun className="w-4 h-4 text-amber-500 shrink-0" />
+                      <div>
+                        <div className="text-xs font-bold">Light Mode</div>
+                        <div className="text-[10px] text-slate-400">High-contrast bright</div>
+                      </div>
+                    </button>
                   </div>
                 </div>
 

@@ -3,16 +3,20 @@ import {
   User,
   Users,
   ExternalLink,
-  Bot,
   PlusCircle,
   Zap,
   LogOut,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import type { UserSession } from '../types/blog';
+import type { AppTheme } from '../services/themeService';
 
 interface NavbarProps {
   user: UserSession;
   historyCount: number;
+  theme: AppTheme;
+  onToggleTheme: () => void;
   onOpenLogin: () => void;
   onOpenHistory: () => void;
   onNewGenerator: () => void;
@@ -24,6 +28,8 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   user,
   historyCount,
+  theme,
+  onToggleTheme,
   onOpenLogin,
   onOpenHistory,
   onNewGenerator,
@@ -36,11 +42,16 @@ export const Navbar: React.FC<NavbarProps> = ({
     <header className="sticky top-0 z-40 glass-panel border-b border-slate-800/80 bg-slate-950/80">
       <div className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Left: Brand Identity */}
-        <div className="flex items-center space-x-3 cursor-pointer" onClick={onNewGenerator}>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-600 to-yellow-400 p-0.5 shadow-lg shadow-amber-500/20">
-            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-              <Bot className="w-5 h-5 text-amber-400" />
-            </div>
+        <div className="flex items-center space-x-3 cursor-pointer group" onClick={onNewGenerator}>
+          <div className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-white/95 border border-amber-400/50 p-1 shadow-md shadow-amber-500/10 group-hover:border-amber-400 transition">
+            <img
+              src="https://assets.cdn.filesafe.space/cXVGcSjHPvm9Z4paH9gG/media/6a51c7bb708c41d4dfa93e71.webp"
+              alt="STCA Logo"
+              className="w-full h-full object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/logo.webp';
+              }}
+            />
           </div>
           <div>
             <div className="flex items-center space-x-2">
@@ -81,6 +92,26 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>Canva Templates</span>
             <ExternalLink className="w-3 h-3 text-slate-400" />
           </a>
+
+          {/* Theme Mode Toggle (Dark / Light) */}
+          <button
+            onClick={onToggleTheme}
+            title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            aria-label="Toggle Dark and Light Mode"
+            className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-2 text-xs sm:text-sm font-medium rounded-lg border border-slate-700/60 bg-slate-800/60 hover:bg-slate-700/80 text-slate-300 transition group cursor-pointer"
+          >
+            {theme === 'dark' ? (
+              <>
+                <Sun className="w-4 h-4 text-amber-400 group-hover:rotate-45 transition-transform duration-300" />
+                <span className="hidden xl:inline text-xs font-semibold text-slate-300">Light</span>
+              </>
+            ) : (
+              <>
+                <Moon className="w-4 h-4 text-amber-500 group-hover:-rotate-12 transition-transform duration-300" />
+                <span className="hidden xl:inline text-xs font-semibold text-slate-700">Dark</span>
+              </>
+            )}
+          </button>
 
           {/* History Drawer Trigger */}
           <button

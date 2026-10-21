@@ -357,3 +357,12 @@ export async function loadAllSettingsFromSupabase(settingsId: string = 'default'
   return true;
 }
 
+export {
+  getStoredTheme,
+  saveTheme,
+  applyTheme,
+  toggleTheme,
+  initTheme,
+} from './themeService';
+export type { AppTheme } from './themeService';
+

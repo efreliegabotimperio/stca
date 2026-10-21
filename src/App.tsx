@@ -17,12 +17,20 @@ import {
   loadAllSettingsFromSupabase,
 } from './services/authService';
 import { signOutSupabase } from './services/supabaseService';
+import { getStoredTheme, saveTheme, type AppTheme } from './services/themeService';
 import type { STCABlogPackage, UserSession } from './types/blog';
 
 export function App() {
   const [user, setUser] = useState<UserSession | null>(getStoredUserSession());
+  const [theme, setTheme] = useState<AppTheme>(getStoredTheme);
   const [history, setHistory] = useState<STCABlogPackage[]>([]);
   const [activePackage, setActivePackage] = useState<STCABlogPackage | null>(null);
+
+  const handleToggleTheme = () => {
+    const nextTheme: AppTheme = theme === 'dark' ? 'light' : 'dark';
+    saveTheme(nextTheme);
+    setTheme(nextTheme);
+  };
 
   // Modals
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -133,6 +141,8 @@ export function App() {
       <Navbar
         user={user}
         historyCount={accessibleHistory.length}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
         onOpenLogin={() => setIsLoginOpen(true)}
         onOpenHistory={() => setIsHistoryOpen(true)}
         onNewGenerator={() => setActivePackage(null)}
@@ -156,6 +166,8 @@ export function App() {
       <LoginModal
         isOpen={isLoginOpen}
         currentUser={user}
+        currentTheme={theme}
+        onThemeChange={(newTheme) => setTheme(newTheme)}
         onClose={() => setIsLoginOpen(false)}
         onSaveUser={handleSaveUser}
         onLogout={handleLogout}

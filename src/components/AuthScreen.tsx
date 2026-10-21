@@ -5,10 +5,11 @@ import {
   User,
   Eye,
   EyeOff,
-  Bot,
   ShieldCheck,
   ArrowRight,
   AlertCircle,
+  Sun,
+  Moon,
 } from 'lucide-react';
 
 import type { UserSession } from '../types/blog';
@@ -17,12 +18,14 @@ import {
   registerWithCredentials,
 } from '../services/supabaseService';
 import { saveUserSession } from '../services/authService';
+import { getStoredTheme, saveTheme, type AppTheme } from '../services/themeService';
 
 interface AuthScreenProps {
   onLoginSuccess: (session: UserSession) => void;
 }
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
+  const [currentTheme, setCurrentTheme] = useState<AppTheme>(getStoredTheme);
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [identifier, setIdentifier] = useState('');
   const [email, setEmail] = useState('');
@@ -33,6 +36,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const handleToggleTheme = () => {
+    const nextTheme: AppTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    saveTheme(nextTheme);
+    setCurrentTheme(nextTheme);
+  };
 
 
 
@@ -134,6 +143,28 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
 
   return (
     <div className="min-h-screen bg-[#070b14] flex items-center justify-center p-4 relative overflow-hidden selection:bg-amber-500/30 selection:text-amber-200">
+      {/* Theme Toggle Button in Auth Screen */}
+      <div className="absolute top-4 right-4 z-20">
+        <button
+          type="button"
+          onClick={handleToggleTheme}
+          title={currentTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          className="flex items-center space-x-2 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-700/60 bg-slate-900/80 hover:bg-slate-800 text-slate-300 backdrop-blur-md shadow-lg transition group cursor-pointer"
+        >
+          {currentTheme === 'dark' ? (
+            <>
+              <Sun className="w-4 h-4 text-amber-400 group-hover:rotate-45 transition-transform duration-300" />
+              <span>Light Mode</span>
+            </>
+          ) : (
+            <>
+              <Moon className="w-4 h-4 text-amber-500 group-hover:-rotate-12 transition-transform duration-300" />
+              <span>Dark Mode</span>
+            </>
+          )}
+        </button>
+      </div>
+
       {/* Background Ambient Glows */}
       <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-orange-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -141,10 +172,18 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLoginSuccess }) => {
       {/* Main Card */}
       <div className="relative w-full max-w-md bg-slate-900/90 border border-slate-800/90 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200">
         {/* Brand Header */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-600 to-yellow-400 p-0.5 shadow-xl shadow-amber-500/20 mb-3">
-            <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-              <Bot className="w-7 h-7 text-amber-400" />
+        <div className="text-center mb-6 flex flex-col items-center">
+          <div className="relative mb-3 group">
+            <div className="absolute -inset-1.5 bg-gradient-to-r from-amber-500/40 via-orange-500/30 to-yellow-500/40 rounded-2xl blur-lg opacity-80 group-hover:opacity-100 transition duration-300 pointer-events-none" />
+            <div className="relative p-2.5 rounded-2xl bg-white/95 border border-amber-400/50 shadow-2xl shadow-amber-500/20 flex items-center justify-center">
+              <img
+                src="https://assets.cdn.filesafe.space/cXVGcSjHPvm9Z4paH9gG/media/6a51c7bb708c41d4dfa93e71.webp"
+                alt="Smart Tools Construction Academy Logo"
+                className="w-24 h-24 sm:w-28 sm:h-28 object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/logo.webp';
+                }}
+              />
             </div>
           </div>
           <h1 className="text-2xl font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-300 to-yellow-200">
