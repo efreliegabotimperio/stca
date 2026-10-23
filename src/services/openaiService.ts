@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import type { JobInputs, PresenterProfile, STCABlogPackage } from '../types/blog';
+import { decidePersonaForTopic } from './personaDecisionService';
 
 export async function generateSTCABlogPackageWithOpenAI(
   inputs: JobInputs,
@@ -12,6 +13,17 @@ export async function generateSTCABlogPackageWithOpenAI(
     dangerouslyAllowBrowser: true,
   });
 
+  // Automatically decide persona if set to 'auto' or not specified
+  let resolvedPresenter = presenter;
+  let decisionReason = '';
+  if (!resolvedPresenter || inputs.presenterId === 'auto' || resolvedPresenter.id === 'auto') {
+    const decision = decidePersonaForTopic(inputs.topic, inputs.draftText, inputs.funnelStage);
+    resolvedPresenter = decision.persona;
+    inputs.presenterId = decision.persona.id;
+    inputs.voiceId = decision.persona.masterVoiceId;
+    decisionReason = decision.reason;
+  }
+
   const dateStr = new Date().toISOString().split('T')[0];
   const slug =
     inputs.topic
@@ -22,7 +34,10 @@ export async function generateSTCABlogPackageWithOpenAI(
   onProgress?.(0, 'Phase 0 — Authenticating OpenAI API & STCA Brand Registry...');
   await new Promise((r) => setTimeout(r, 300));
 
-  onProgress?.(1, 'Phase 1 & 2 — Querying OpenAI GPT-4o for Research & Presenter Persona...');
+  onProgress?.(
+    1,
+    `Phase 1 & 2 — Querying OpenAI GPT-4o for Research & Presenter Persona (${resolvedPresenter.name})...`
+  );
 
   const prompt = `You are the master orchestrator for STCA STUDIOS — Ultimate Blog Production Skill v2.0.0.
 Your task is to generate a complete 11-phase STCA Blog Production Package.
@@ -30,20 +45,40 @@ Your task is to generate a complete 11-phase STCA Blog Production Package.
 Target Details:
 - Blog Topic: "${inputs.topic}"
 - Draft Notes/Context: "${inputs.draftText || 'N/A'}"
-- Presenter Assigned: "${presenter.name}" (${presenter.role})
-  * Catchphrase: "${presenter.catchphrase}"
-  * Master Avatar ID: "${presenter.masterAvatarId}"
-  * Master Voice ID: "${presenter.masterVoiceId}"
-  * Tone Rules: "${presenter.toneRules}"
+- Presenter Assigned (STCA Trio): "${resolvedPresenter.name}" (${resolvedPresenter.role})
+  * Primary Role: "${resolvedPresenter.primaryRole || 'Authority + Vision'}"
+  * Brand Function: "${resolvedPresenter.brandFunction || 'Primary Authority Figure'}"
+  * Buyer Anchor: "${resolvedPresenter.buyerAnchor || 'Trust me.'}"
+  * Core Strength: "${resolvedPresenter.coreStrength || 'Trust, leadership, experience'}"
+  * Slogan / Anchor: "${resolvedPresenter.slogan || resolvedPresenter.catchphrase}"
+  * Catchphrase: "${resolvedPresenter.catchphrase}"
+  * Master Avatar ID: "${resolvedPresenter.masterAvatarId}"
+  * Master Voice ID: "${resolvedPresenter.masterVoiceId}"
+  * Tone Rules: "${resolvedPresenter.toneRules}"
+  ${decisionReason ? `* Auto-Decision Context: ${decisionReason}` : ''}
 - Target Length: ${inputs.targetLength}
 - Funnel Stage: ${inputs.funnelStage}
 - Market: ${inputs.market}
-- Canva Template ID: ${inputs.canvaTemplateId || 'STCA-CANVA-MASTER-BLOG-2026'}
 
-STCA Brand Rules:
+STCA AUDIENCE & MISSION CONTEXT (Smart Tools Construction Academy - smarttoolsconstructionacademy.com):
+STCA is NOT for big commercial construction companies, enterprise highrise contractors, or industrial corporate sites.
+STCA is exclusively "Built for three kinds of builders":
+1. FOR OWNERS: Homeowners — Learn how to plan and manage construction/remodel projects, understand contractor estimates, and avoid costly mistakes without doing manual labor.
+2. FOR DOERS: DIY Remodelers — Gain professional-level knowledge so projects are planned correctly, sequenced properly, and built to last.
+3. FOR PROS-IN-PROGRESS: Aspiring Handypeople — Learn estimating, scope control, job flow, and client communication to operate professionally.
+
+CRITICAL CONTENT DIRECTIVES:
+- Every article, tip, and framework MUST directly target one or more of these 3 builder audiences.
+- DO NOT mention or focus on big corporate construction companies, heavy commercial machinery, enterprise corporate politics, or skyscraper jobsites.
+- Ground all advice in practical residential remodeling, contractor oversight, DIY trade craft, or solo handyperson business practices.
+
+STCA Brand Rules (STCA Trio Persona System):
 1. Brand colors: Primary #1E293B, Secondary #0F766E, Accent #F59E0B, Background #F8FAFC, Text #0F172A.
-2. Presenter persona must be human-first, authoritative, practical, and incorporate their specific catchphrase and tone rules naturally.
-3. Generate structured output matching all 11 phases.
+2. The STCA Trio persona must strictly anchor their assigned brand function:
+   - Tool Cowboy (Derek): Face of experience ("Trust me."). Authoritative, steady, plain-spoken, practical, real-world analogies, risk avoidance, contractor selection & oversight, budget realism, decision under pressure. Never uses internet slang, buzzwords, or influencer hype. Primary audience alignment: Homeowners & field reality.
+   - Ms Fix-It (Cassidy): Translator + Confidence Builder ("Understand this."). Clear, confident, supportive, plain English, step-by-step checklists, worksheets, budget clarity, red flags/green flags. Explains why things matter. Never talks down or uses over-technical jargon. Primary audience alignment: DIY Remodelers.
+   - Robo Builder (Brian): Systems + Proof Engine ("Here’s the system."). Precise, neutral, structured, data-driven, estimating math, scope control frameworks, repeatable SOPs, dashboards. Never uses emotional fluff or humor overload. Primary audience alignment: Aspiring Handypeople.
+3. Incorporate their specific catchphrase, buyer anchor, and tone rules naturally into the blog and presenter callout.
 
 Return ONLY a valid JSON object with the following exact keys:
 {
@@ -73,74 +108,6 @@ Return ONLY a valid JSON object with the following exact keys:
     "presenterCallout": "string",
     "ctaSection": "string",
     "conclusion": "string"
-  },
-  "canvaVisualSpec": {
-    "templateId": "string",
-    "referenceId": "string",
-    "logoAssetId": "string",
-    "graphicsList": [
-      {
-        "type": "HERO",
-        "location": "string",
-        "headline": "string",
-        "layoutInstructions": "string",
-        "altText": "string",
-        "dimensions": "string",
-        "exportFilename": "string"
-      },
-      {
-        "type": "INLINE_CALLOUT",
-        "location": "string",
-        "headline": "string",
-        "layoutInstructions": "string",
-        "altText": "string",
-        "dimensions": "string",
-        "exportFilename": "string"
-      },
-      {
-        "type": "QUOTE_CARD",
-        "location": "string",
-        "headline": "string",
-        "layoutInstructions": "string",
-        "altText": "string",
-        "dimensions": "string",
-        "exportFilename": "string"
-      },
-      {
-        "type": "CTA_BANNER",
-        "location": "string",
-        "headline": "string",
-        "layoutInstructions": "string",
-        "altText": "string",
-        "dimensions": "string",
-        "exportFilename": "string"
-      },
-      {
-        "type": "SOCIAL_THUMBNAIL",
-        "location": "string",
-        "headline": "string",
-        "layoutInstructions": "string",
-        "altText": "string",
-        "dimensions": "string",
-        "exportFilename": "string"
-      }
-    ]
-  },
-  "voiceover": {
-    "targetDurationSeconds": 180,
-    "spokenPhrasingScript": "string",
-    "pronunciationNotes": ["string"],
-    "introScript": "string",
-    "outroScript": "string",
-    "audioDirectives": ["string"]
-  },
-  "avatarVideo": {
-    "backgroundScene": "string",
-    "framingPlacement": "string",
-    "onScreenTitles": ["string"],
-    "bRollInsertPoints": ["string"],
-    "outputRatios": ["16:9", "9:16", "1:1"],
-    "exportFilenames": ["string"]
   },
   "seo": {
     "seoTitle": "string",
@@ -224,47 +191,6 @@ Return ONLY a valid JSON object with the following exact keys:
     status: 'READY_FOR_PUBLISH',
   };
 
-  const finalCanvaVisualSpec = {
-    templateId: inputs.canvaTemplateId || 'STCA-CANVA-MASTER-BLOG-2026',
-    referenceId: 'STCA-REF-DESIGN-V2',
-    logoAssetId: 'STCA-LOGO-PRIMARY-VECTOR',
-    colorPalette: {
-      primary: '#1E293B',
-      secondary: '#0F766E',
-      accent: '#F59E0B',
-      background: '#F8FAFC',
-      text: '#0F172A',
-    },
-    typography: {
-      headerFont: 'Inter Bold / Outfit Heavy',
-      bodyFont: 'Inter Regular',
-    },
-    graphicsList: parsed.canvaVisualSpec?.graphicsList || [],
-  };
-
-  const finalVoiceover = {
-    presenterName: presenter.name,
-    masterVoiceId: presenter.masterVoiceId,
-    targetDurationSeconds: parsed.voiceover?.targetDurationSeconds || 180,
-    spokenPhrasingScript: parsed.voiceover?.spokenPhrasingScript || '',
-    pronunciationNotes: parsed.voiceover?.pronunciationNotes || [],
-    introScript: parsed.voiceover?.introScript || '',
-    outroScript: parsed.voiceover?.outroScript || '',
-    audioDirectives: parsed.voiceover?.audioDirectives || [],
-  };
-
-  const finalAvatarVideo = {
-    presenterName: presenter.name,
-    masterAvatarId: presenter.masterAvatarId,
-    masterVoiceId: presenter.masterVoiceId,
-    backgroundScene: parsed.avatarVideo?.backgroundScene || '',
-    framingPlacement: parsed.avatarVideo?.framingPlacement || '',
-    onScreenTitles: parsed.avatarVideo?.onScreenTitles || [],
-    bRollInsertPoints: parsed.avatarVideo?.bRollInsertPoints || [],
-    outputRatios: (parsed.avatarVideo?.outputRatios || ['16:9', '9:16', '1:1']) as ('16:9' | '9:16' | '1:1')[],
-    exportFilenames: parsed.avatarVideo?.exportFilenames || [],
-  };
-
   const finalQaReport = {
     overallStatus: 'PASS' as const,
     passedCount: 12,
@@ -273,40 +199,9 @@ Return ONLY a valid JSON object with the following exact keys:
     blockers: [],
   };
 
-  const manifest = {
-    jobId: inputs.id,
-    version: '2.0.0-OPENAI-LIVE',
-    blogSlug: slug,
-    blogTitle: blogMasterData.h1Title || inputs.topic,
-    researchStatus: 'PASS',
-    presenterId: presenter.id,
-    avatarAssetId: presenter.masterAvatarId,
-    voiceAssetId: presenter.masterVoiceId,
-    canvaTemplateId: finalCanvaVisualSpec.templateId,
-    brandRules: 'LOCKED_STCA_V2_AUTHORITATIVE',
-    ctaId: 'CTA-STCA-RESOURCE-HUB',
-    generatedOutputs: [
-      '00_JOB.json',
-      '01_RESEARCH-BRIEF.md',
-      '02_SOURCE-LEDGER.md',
-      '03_BLOG-MASTER.md',
-      '04_SEO.md',
-      '05_CANVA-VISUAL-SPEC.md',
-      '06_VOICEOVER__CHARACTER.md',
-      '07_AVATAR-VIDEO-BRIEF__CHARACTER.md',
-      '08_SOCIAL-REPURPOSE.md',
-      '09_PUBLISH-FIELD-MAP.md',
-      '10_QA-REPORT.md',
-      'MANIFEST.json',
-    ],
-    qaStatus: 'PASS',
-    blockers: [],
-    publishStatus: 'READY_FOR_PUBLISH',
-  };
-
   return {
     job: updatedJob,
-    presenter,
+    presenter: resolvedPresenter,
     researchBrief: parsed.researchBrief || {},
     blogMaster: {
       h1Title: blogMasterData.h1Title || inputs.topic,
@@ -319,11 +214,7 @@ Return ONLY a valid JSON object with the following exact keys:
       fullMarkdown,
     },
     seo: parsed.seo || {},
-    canvaVisualSpec: finalCanvaVisualSpec,
-    voiceover: finalVoiceover,
-    avatarVideo: finalAvatarVideo,
     socialRepurpose: parsed.socialRepurpose || {},
     qaReport: finalQaReport,
-    manifest,
   };
 }

@@ -4,6 +4,11 @@ export interface PresenterProfile {
   id: string;
   name: string;
   role: string;
+  primaryRole?: string;
+  brandFunction?: string;
+  coreStrength?: string;
+  buyerAnchor?: string;
+  slogan?: string;
   avatarUrl: string;
   masterAvatarId: string;
   masterVoiceId: string;
@@ -160,12 +165,12 @@ export interface STCABlogPackage {
     fullMarkdown: string;
   };
   seo: SEOPackage;
-  canvaVisualSpec: CanvaVisualSpec;
-  voiceover: VoiceoverBrief;
-  avatarVideo: AvatarVideoBrief;
+  canvaVisualSpec?: CanvaVisualSpec;
+  voiceover?: VoiceoverBrief;
+  avatarVideo?: AvatarVideoBrief;
   socialRepurpose: SocialRepurpose;
   qaReport: QAReport;
-  manifest: ManifestData;
+  manifest?: ManifestData;
   userId?: string;
   userEmail?: string;
   userName?: string;

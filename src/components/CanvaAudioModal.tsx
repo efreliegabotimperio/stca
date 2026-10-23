@@ -105,7 +105,7 @@ export const CanvaAudioModal: React.FC<CanvaAudioModalProps> = ({
 
   // Automatically trigger Canva Voice AI Workflow
   const handleAutoGenerateCanvaVoice = () => {
-    navigator.clipboard.writeText(pkg.voiceover.spokenPhrasingScript);
+    navigator.clipboard.writeText(pkg.voiceover?.spokenPhrasingScript || '');
 
     setCanvaTriggerSuccess(true);
     setTimeout(() => setCanvaTriggerSuccess(false), 5000);
@@ -127,7 +127,7 @@ export const CanvaAudioModal: React.FC<CanvaAudioModalProps> = ({
     try {
       const openai = new OpenAI({ apiKey: apiKey.trim(), dangerouslyAllowBrowser: true });
       const voice = getOpenAIVoiceForPresenter(pkg.presenter.id);
-      const scriptText = pkg.voiceover.spokenPhrasingScript.slice(0, 1000);
+      const scriptText = (pkg.voiceover?.spokenPhrasingScript || '').slice(0, 1000);
 
       const mp3Response = await openai.audio.speech.create({
         model: 'tts-1',
@@ -169,7 +169,7 @@ export const CanvaAudioModal: React.FC<CanvaAudioModalProps> = ({
     }
 
     window.speechSynthesis.cancel();
-    const newUtterance = new SpeechSynthesisUtterance(pkg.voiceover.spokenPhrasingScript);
+    const newUtterance = new SpeechSynthesisUtterance(pkg.voiceover?.spokenPhrasingScript || '');
     newUtterance.rate = 1.0;
 
     const voice = availableWebVoices.find((v) => v.voiceURI === selectedWebVoiceURI);
@@ -186,16 +186,16 @@ export const CanvaAudioModal: React.FC<CanvaAudioModalProps> = ({
 
   const handleCopyCanvaDataset = () => {
     const dataset = {
-      template_id: pkg.canvaVisualSpec.templateId,
+      template_id: pkg.canvaVisualSpec?.templateId || '',
       blog_title: pkg.blogMaster.h1Title,
       presenter_name: pkg.presenter.name,
       presenter_avatar_id: pkg.presenter.masterAvatarId,
       presenter_voice_id: pkg.presenter.masterVoiceId,
-      primary_color: pkg.canvaVisualSpec.colorPalette.primary,
-      secondary_color: pkg.canvaVisualSpec.colorPalette.secondary,
-      accent_color: pkg.canvaVisualSpec.colorPalette.accent,
-      hero_headline: pkg.canvaVisualSpec.graphicsList[0]?.headline || '',
-      cta_headline: pkg.canvaVisualSpec.graphicsList[3]?.headline || '',
+      primary_color: pkg.canvaVisualSpec?.colorPalette.primary || '#1E293B',
+      secondary_color: pkg.canvaVisualSpec?.colorPalette.secondary || '#0F766E',
+      accent_color: pkg.canvaVisualSpec?.colorPalette.accent || '#F59E0B',
+      hero_headline: pkg.canvaVisualSpec?.graphicsList[0]?.headline || '',
+      cta_headline: pkg.canvaVisualSpec?.graphicsList[3]?.headline || '',
     };
 
     navigator.clipboard.writeText(JSON.stringify(dataset, null, 2));
@@ -365,7 +365,7 @@ export const CanvaAudioModal: React.FC<CanvaAudioModalProps> = ({
           )}
 
           <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800 text-xs text-slate-300 font-mono leading-relaxed max-h-24 overflow-y-auto">
-            {pkg.voiceover.spokenPhrasingScript}
+            {pkg.voiceover?.spokenPhrasingScript || ''}
           </div>
         </div>
 

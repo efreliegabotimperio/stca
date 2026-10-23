@@ -1,36 +1,27 @@
 import React, { useState } from 'react';
 import {
   FileText,
-  Image as ImageIcon,
-  Mic,
-  Video,
   Search,
   Share2,
   ShieldCheck,
-  Code,
-  Download,
   Copy,
   CheckCircle2,
-  Zap,
-  Volume2,
+  Download,
+  BookOpen,
+  Sparkles,
 } from 'lucide-react';
-import JSZip from 'jszip';
 import type { STCABlogPackage } from '../types/blog';
+import { SocialGeneratorModal } from './SocialGeneratorModal';
 
 interface PackageViewerProps {
   pkg: STCABlogPackage;
-  onOpenCanvaAudioModal: () => void;
+  onOpenCanvaAudioModal?: () => void;
 }
 
-export const PackageViewer: React.FC<PackageViewerProps> = ({
-  pkg,
-  onOpenCanvaAudioModal,
-}) => {
-  const [activeTab, setActiveTab] = useState<
-    'blog' | 'canva' | 'voiceover' | 'avatar' | 'seo' | 'social' | 'qa' | 'manifest'
-  >('blog');
+export const PackageViewer: React.FC<PackageViewerProps> = ({ pkg }) => {
+  const [activeTab, setActiveTab] = useState<'blog' | 'research' | 'seo' | 'social' | 'qa'>('blog');
   const [copiedMd, setCopiedMd] = useState(false);
-  const [isZipping, setIsZipping] = useState(false);
+  const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
 
   const handleCopyMarkdown = () => {
     navigator.clipboard.writeText(pkg.blogMaster.fullMarkdown);
@@ -38,52 +29,24 @@ export const PackageViewer: React.FC<PackageViewerProps> = ({
     setTimeout(() => setCopiedMd(false), 2000);
   };
 
-  const handleDownloadZip = async () => {
-    setIsZipping(true);
-    try {
-      const zip = new JSZip();
-      const dateStr = new Date().toISOString().split('T')[0];
-      const folderName = `${dateStr}__${pkg.seo.slug}`;
-      const folder = zip.folder(folderName);
-
-      if (folder) {
-        folder.file('00_JOB.json', JSON.stringify(pkg.job, null, 2));
-        folder.file('01_RESEARCH-BRIEF.md', JSON.stringify(pkg.researchBrief, null, 2));
-        folder.file('02_SOURCE-LEDGER.md', JSON.stringify(pkg.researchBrief.sourceLedger, null, 2));
-        folder.file('03_BLOG-MASTER.md', pkg.blogMaster.fullMarkdown);
-        folder.file('04_SEO.md', JSON.stringify(pkg.seo, null, 2));
-        folder.file('05_CANVA-VISUAL-SPEC.md', JSON.stringify(pkg.canvaVisualSpec, null, 2));
-        folder.file('06_VOICEOVER__CHARACTER.md', JSON.stringify(pkg.voiceover, null, 2));
-        folder.file('07_AVATAR-VIDEO-BRIEF__CHARACTER.md', JSON.stringify(pkg.avatarVideo, null, 2));
-        folder.file('08_SOCIAL-REPURPOSE.md', JSON.stringify(pkg.socialRepurpose, null, 2));
-        folder.file('09_PUBLISH-FIELD-MAP.md', JSON.stringify({ slug: pkg.seo.slug, title: pkg.blogMaster.h1Title }, null, 2));
-        folder.file('10_QA-REPORT.md', JSON.stringify(pkg.qaReport, null, 2));
-        folder.file('MANIFEST.json', JSON.stringify(pkg.manifest, null, 2));
-      }
-
-      const content = await zip.generateAsync({ type: 'blob' });
-      const url = window.URL.createObjectURL(content);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${folderName}.zip`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error('ZIP export error:', e);
-    } finally {
-      setIsZipping(false);
-    }
+  const handleDownloadMarkdown = () => {
+    const blob = new Blob([pkg.blogMaster.fullMarkdown], { type: 'text/markdown;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `${pkg.seo.slug || 'stca-blog'}.md`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const TABS = [
     { id: 'blog', label: 'Blog Master', icon: FileText },
-    { id: 'canva', label: 'Canva Specs', icon: ImageIcon },
-    { id: 'voiceover', label: 'Voiceover & Audio', icon: Mic },
-    { id: 'avatar', label: 'Avatar Video Brief', icon: Video },
+    { id: 'research', label: 'Research & Sources', icon: BookOpen },
     { id: 'seo', label: 'SEO & Metadata', icon: Search },
-    { id: 'social', label: 'Social Repurpose', icon: Share2 },
+    { id: 'social', label: 'Social Captions & Graphic', icon: Share2 },
     { id: 'qa', label: '12-Point QA Gate', icon: ShieldCheck },
-    { id: 'manifest', label: 'Manifest & Bundle', icon: Code },
   ] as const;
 
   return (
@@ -96,7 +59,7 @@ export const PackageViewer: React.FC<PackageViewerProps> = ({
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase">
                 {pkg.job.status}
               </span>
-              <span className="text-xs text-slate-400 font-mono">
+              <span className="text-xs text-slate-500 font-mono">
                 Job ID: {pkg.job.id}
               </span>
             </div>
@@ -104,7 +67,7 @@ export const PackageViewer: React.FC<PackageViewerProps> = ({
               {pkg.blogMaster.h1Title}
             </h2>
             <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400 pt-1">
-              <span className="flex items-center space-x-1">
+              <span className="flex items-center space-x-1.5">
                 <img
                   src={pkg.presenter.avatarUrl}
                   alt=""
@@ -113,31 +76,40 @@ export const PackageViewer: React.FC<PackageViewerProps> = ({
                 <strong className="text-slate-200">{pkg.presenter.name}</strong>
               </span>
               <span>•</span>
-              <span>Voice: <code className="text-amber-400">{pkg.presenter.masterVoiceId}</code></span>
-              <span>•</span>
-              <span>Avatar: <code className="text-cyan-400">{pkg.presenter.masterAvatarId}</code></span>
+              <span className="text-amber-400 font-medium">{pkg.presenter.role}</span>
+              {pkg.presenter.buyerAnchor && (
+                <>
+                  <span>•</span>
+                  <span className="text-slate-300">{pkg.presenter.primaryRole} ({pkg.presenter.buyerAnchor})</span>
+                </>
+              )}
             </div>
           </div>
 
           {/* Quick Actions */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Canva & Audio Integration Trigger */}
             <button
-              onClick={onOpenCanvaAudioModal}
-              className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-lg shadow-cyan-500/20 transition active:scale-95"
+              onClick={() => setIsSocialModalOpen(true)}
+              className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 hover:brightness-110 text-slate-950 shadow-lg shadow-amber-500/25 transition active:scale-95 border border-amber-300"
             >
-              <Zap className="w-4 h-4 text-cyan-200" />
-              <span>Link Canva / Generate Audio</span>
+              <Share2 className="w-4 h-4 fill-slate-950" />
+              <span>⚡ Generate Social Captions & Graphic</span>
             </button>
 
-            {/* ZIP Bundle Download */}
             <button
-              onClick={handleDownloadZip}
-              disabled={isZipping}
-              className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
+              onClick={handleCopyMarkdown}
+              className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition active:scale-95"
+            >
+              {copiedMd ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+              <span>{copiedMd ? 'Copied Markdown!' : 'Copy Markdown'}</span>
+            </button>
+
+            <button
+              onClick={handleDownloadMarkdown}
+              className="flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition active:scale-95"
             >
               <Download className="w-4 h-4 text-amber-400" />
-              <span>{isZipping ? 'Zipping...' : 'Download Bundle ZIP'}</span>
+              <span>Download Article (.md)</span>
             </button>
           </div>
         </div>
@@ -160,6 +132,13 @@ export const PackageViewer: React.FC<PackageViewerProps> = ({
             >
               <Icon className={`w-4 h-4 ${isActive ? 'text-slate-950' : 'text-slate-400'}`} />
               <span>{tab.label}</span>
+              {tab.id === 'social' && (
+                <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-black uppercase ${
+                  isActive ? 'bg-slate-950 text-amber-300' : 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
+                }`}>
+                  New
+                </span>
+              )}
             </button>
           );
         })}
@@ -168,6 +147,32 @@ export const PackageViewer: React.FC<PackageViewerProps> = ({
       {/* TAB 1: Blog Master */}
       {activeTab === 'blog' && (
         <div className="glass-panel border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+          
+          {/* Quick Social Captions & Graphic Callout on Blog Master Tab */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-slate-900 border border-amber-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg shadow-amber-500/5">
+            <div className="flex items-center space-x-3">
+              <div className="p-2.5 rounded-xl bg-amber-400 text-slate-950 shadow-sm shadow-amber-400/30 shrink-0">
+                <Share2 className="w-5 h-5 fill-slate-950" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-slate-100 flex items-center space-x-2">
+                  <span>Auto-Generate Social Captions & Branded Graphic</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-950 uppercase">Feature</span>
+                </h4>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  Instant Instagram, LinkedIn, Facebook, and Reel captions + downloadable PNG graphic for this article.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsSocialModalOpen(true)}
+              className="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 rounded-xl text-xs font-black shadow-md shadow-amber-400/25 transition inline-flex items-center space-x-2 shrink-0 active:scale-95"
+            >
+              <Sparkles className="w-3.5 h-3.5 fill-slate-950" />
+              <span>Generate Captions & Graphic</span>
+            </button>
+          </div>
+
           <div className="flex items-center justify-between pb-4 border-b border-slate-800">
             <div>
               <h3 className="text-lg font-bold text-slate-100">STCA Blog Master Article</h3>
@@ -201,9 +206,11 @@ export const PackageViewer: React.FC<PackageViewerProps> = ({
               </div>
             ))}
 
-            <div className="bg-purple-950/30 border border-purple-500/30 p-4 rounded-2xl text-xs text-purple-200">
-              {pkg.blogMaster.presenterCallout}
-            </div>
+            {pkg.blogMaster.presenterCallout && (
+              <div className="bg-amber-950/20 border border-amber-500/30 p-4 rounded-2xl text-xs text-amber-200">
+                {pkg.blogMaster.presenterCallout}
+              </div>
+            )}
 
             <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 text-xs text-slate-300">
               <h4 className="font-bold text-slate-100 mb-1">Conclusion & CTA</h4>
@@ -213,118 +220,59 @@ export const PackageViewer: React.FC<PackageViewerProps> = ({
         </div>
       )}
 
-      {/* TAB 2: Canva Visual Specs */}
-      {activeTab === 'canva' && (
-        <div className="glass-panel border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-            <div>
-              <h3 className="text-lg font-bold text-slate-100">Canva Visual Production Plan</h3>
-              <p className="text-xs text-slate-400">Template ID: <code className="text-amber-400 font-mono">{pkg.canvaVisualSpec.templateId}</code></p>
-            </div>
-            <button
-              onClick={onOpenCanvaAudioModal}
-              className="flex items-center space-x-2 px-3 py-1.5 text-xs font-semibold bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 rounded-lg transition"
-            >
-              <Zap className="w-3.5 h-3.5" />
-              <span>Copy Canva Dataset JSON</span>
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {pkg.canvaVisualSpec.graphicsList.map((gfx, i) => (
-              <div key={i} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="px-2.5 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-bold">
-                    {gfx.type}
-                  </span>
-                  <span className="text-[11px] font-mono text-slate-400">{gfx.dimensions}</span>
-                </div>
-                <h4 className="font-bold text-slate-200 text-sm">{gfx.headline}</h4>
-                <p className="text-xs text-slate-400">{gfx.layoutInstructions}</p>
-                <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-500 flex items-center justify-between font-mono">
-                  <span>File: {gfx.exportFilename}</span>
-                  <span className="text-slate-400 truncate max-w-[150px]">Alt: {gfx.altText}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 3: Voiceover & Audio */}
-      {activeTab === 'voiceover' && (
-        <div className="glass-panel border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-            <div>
-              <h3 className="text-lg font-bold text-slate-100">Character Voiceover & Audio Brief</h3>
-              <p className="text-xs text-slate-400">Master Voice ID: <code className="text-amber-400">{pkg.voiceover.masterVoiceId}</code></p>
-            </div>
-            <button
-              onClick={onOpenCanvaAudioModal}
-              className="flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 transition"
-            >
-              <Volume2 className="w-4 h-4" />
-              <span>Test Audio Playback</span>
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-2">
-              <span className="text-[10px] font-bold text-amber-400 uppercase">Spoken Phrasing Script</span>
-              <p className="text-sm text-slate-200 font-mono leading-relaxed">{pkg.voiceover.spokenPhrasingScript}</p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
-                <h4 className="text-xs font-bold text-slate-200">Pronunciation Cues</h4>
-                <ul className="text-xs text-slate-400 space-y-1 list-disc list-inside">
-                  {pkg.voiceover.pronunciationNotes.map((n, i) => (
-                    <li key={i}>{n}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
-                <h4 className="text-xs font-bold text-slate-200">Audio Directives</h4>
-                <ul className="text-xs text-slate-400 space-y-1 list-disc list-inside">
-                  {pkg.voiceover.audioDirectives.map((d, i) => (
-                    <li key={i}>{d}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 4: Avatar Video Brief */}
-      {activeTab === 'avatar' && (
+      {/* TAB 2: Research & Sources */}
+      {activeTab === 'research' && (
         <div className="glass-panel border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
           <div className="pb-4 border-b border-slate-800">
-            <h3 className="text-lg font-bold text-slate-100">Avatar & Video Production Brief</h3>
-            <p className="text-xs text-slate-400">Master Avatar ID: <code className="text-cyan-400">{pkg.avatarVideo.masterAvatarId}</code></p>
+            <h3 className="text-lg font-bold text-slate-100">Research & Intelligence Brief</h3>
+            <p className="text-xs text-slate-400">Primary reader problem, verified facts, and content angle</p>
           </div>
 
           <div className="space-y-4">
-            <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-1">
-              <span className="text-xs font-bold text-amber-400">Background Scene & Framing</span>
-              <p className="text-xs text-slate-300">{pkg.avatarVideo.backgroundScene}</p>
-              <p className="text-xs text-slate-400">{pkg.avatarVideo.framingPlacement}</p>
+            <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-1">
+              <span className="text-xs font-bold text-amber-400">Primary Reader Problem</span>
+              <p className="text-sm text-slate-200">{pkg.researchBrief.primaryReaderProblem}</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {pkg.avatarVideo.outputRatios.map((ratio, i) => (
-                <div key={i} className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-center">
-                  <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono text-xs font-bold">{ratio}</span>
-                  <p className="text-[11px] text-slate-400 font-mono truncate">{pkg.avatarVideo.exportFilenames[i]}</p>
-                </div>
-              ))}
+            <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-1">
+              <span className="text-xs font-bold text-amber-400">Search Intent Summary</span>
+              <p className="text-xs text-slate-300">{pkg.researchBrief.searchIntentSummary}</p>
             </div>
+
+            {pkg.researchBrief.verifiedFacts && pkg.researchBrief.verifiedFacts.length > 0 && (
+              <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
+                <span className="text-xs font-bold text-emerald-400">Verified Facts & Benchmarks</span>
+                <ul className="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                  {pkg.researchBrief.verifiedFacts.map((fact, idx) => (
+                    <li key={idx}>{fact}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {pkg.researchBrief.sourceLedger && pkg.researchBrief.sourceLedger.length > 0 && (
+              <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
+                <span className="text-xs font-bold text-slate-300">Source Ledger</span>
+                <div className="space-y-2">
+                  {pkg.researchBrief.sourceLedger.map((src) => (
+                    <div key={src.id} className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-semibold text-slate-200">{src.title}</span>
+                        <p className="text-[11px] text-slate-500 font-mono">{src.url}</p>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                        {src.credibilityScore}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* TAB 5: SEO Package */}
+      {/* TAB 3: SEO Package */}
       {activeTab === 'seo' && (
         <div className="glass-panel border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
           <div className="pb-4 border-b border-slate-800">
@@ -346,7 +294,7 @@ export const PackageViewer: React.FC<PackageViewerProps> = ({
             <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
               <span className="text-xs font-bold text-slate-300">Secondary Keywords</span>
               <div className="flex flex-wrap gap-2">
-                {pkg.seo.secondaryKeywords.map((kw, i) => (
+                {pkg.seo.secondaryKeywords?.map((kw, i) => (
                   <span key={i} className="px-2.5 py-1 bg-slate-950 text-slate-300 rounded-lg text-xs font-mono">
                     #{kw}
                   </span>
@@ -357,12 +305,41 @@ export const PackageViewer: React.FC<PackageViewerProps> = ({
         </div>
       )}
 
-      {/* TAB 6: Social Repurposing */}
+      {/* TAB 4: Social Repurposing */}
       {activeTab === 'social' && (
         <div className="glass-panel border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
-          <div className="pb-4 border-b border-slate-800">
-            <h3 className="text-lg font-bold text-slate-100">Multi-Channel Social Repurposing</h3>
-            <p className="text-xs text-slate-400">LinkedIn, Facebook, IG Carousel, Short Video & Email</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-800 gap-3">
+            <div>
+              <h3 className="text-lg font-bold text-slate-100">Multi-Channel Social Repurposing</h3>
+              <p className="text-xs text-slate-400">LinkedIn, Facebook, IG Carousel, Short Video & Email</p>
+            </div>
+            <button
+              onClick={() => setIsSocialModalOpen(true)}
+              className="px-4 py-2 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500 hover:brightness-110 text-slate-950 rounded-xl text-xs font-black shadow-md shadow-amber-400/20 transition inline-flex items-center space-x-2 shrink-0"
+            >
+              <Share2 className="w-3.5 h-3.5 fill-slate-950" />
+              <span>Launch Social & Graphic Studio</span>
+            </button>
+          </div>
+
+          {/* Social Studio Banner */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-slate-900 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h4 className="text-sm font-bold text-slate-100 flex items-center space-x-2">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span>Auto-Generate Social Media Captions & Branded Graphic</span>
+              </h4>
+              <p className="text-xs text-slate-400 mt-1">
+                Generates platform-ready captions (Instagram, LinkedIn, Facebook, Video script) and an STCA branded graphic with 1-click PNG download.
+              </p>
+            </div>
+            <button
+              onClick={() => setIsSocialModalOpen(true)}
+              className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold transition inline-flex items-center space-x-1.5 shrink-0"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Open Studio</span>
+            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -373,14 +350,14 @@ export const PackageViewer: React.FC<PackageViewerProps> = ({
 
             <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-2">
               <h4 className="font-bold text-xs text-amber-400">Email Teaser</h4>
-              <p className="text-xs font-bold text-slate-200">Subject: {pkg.socialRepurpose.emailTeaser.subject}</p>
-              <p className="text-xs text-slate-300 whitespace-pre-line">{pkg.socialRepurpose.emailTeaser.body}</p>
+              <p className="text-xs font-bold text-slate-200">Subject: {pkg.socialRepurpose.emailTeaser?.subject}</p>
+              <p className="text-xs text-slate-300 whitespace-pre-line">{pkg.socialRepurpose.emailTeaser?.body}</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* TAB 7: 12-Point QA Gate */}
+      {/* TAB 5: 12-Point QA Gate */}
       {activeTab === 'qa' && (
         <div className="glass-panel border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-slate-800">
@@ -407,19 +384,13 @@ export const PackageViewer: React.FC<PackageViewerProps> = ({
         </div>
       )}
 
-      {/* TAB 8: Manifest */}
-      {activeTab === 'manifest' && (
-        <div className="glass-panel border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
-          <div className="pb-4 border-b border-slate-800">
-            <h3 className="text-lg font-bold text-slate-100">Machine-Readable MANIFEST.json</h3>
-            <p className="text-xs text-slate-400">STCA Production Package Version {pkg.manifest.version}</p>
-          </div>
-
-          <pre className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs text-emerald-400 font-mono overflow-x-auto">
-            {JSON.stringify(pkg.manifest, null, 2)}
-          </pre>
-        </div>
-      )}
+      {/* Social Generator Modal */}
+      <SocialGeneratorModal
+        isOpen={isSocialModalOpen}
+        onClose={() => setIsSocialModalOpen(false)}
+        initialTopic={pkg.job.topic}
+        initialPresenterId={pkg.presenter.id}
+      />
     </div>
   );
 };

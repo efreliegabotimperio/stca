@@ -4,9 +4,9 @@ import { GeneratorWizard } from './components/GeneratorWizard';
 import { PackageViewer } from './components/PackageViewer';
 import { LoginModal } from './components/LoginModal';
 import { HistoryDrawer } from './components/HistoryDrawer';
-import { CanvaAudioModal } from './components/CanvaAudioModal';
 import { UserManagementModal } from './components/UserManagementModal';
 import { AuthScreen } from './components/AuthScreen';
+import { SocialGeneratorModal } from './components/SocialGeneratorModal';
 import {
   getStoredUserSession,
   saveUserSession,
@@ -35,8 +35,8 @@ export function App() {
   // Modals
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [isCanvaAudioOpen, setIsCanvaAudioOpen] = useState(false);
   const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
+  const [isGlobalSocialOpen, setIsGlobalSocialOpen] = useState(false);
 
   // Load history & Supabase settings on mount
   useEffect(() => {
@@ -146,6 +146,7 @@ export function App() {
         onOpenLogin={() => setIsLoginOpen(true)}
         onOpenHistory={() => setIsHistoryOpen(true)}
         onNewGenerator={() => setActivePackage(null)}
+        onOpenSocialStudio={() => setIsGlobalSocialOpen(true)}
         onOpenUserManagement={() => setIsUserManagementOpen(true)}
         onLogout={handleLogout}
       />
@@ -155,7 +156,6 @@ export function App() {
         {activePackage ? (
           <PackageViewer
             pkg={activePackage}
-            onOpenCanvaAudioModal={() => setIsCanvaAudioOpen(true)}
           />
         ) : (
           <GeneratorWizard currentUser={user} onPackageGenerated={handlePackageGenerated} />
@@ -188,13 +188,13 @@ export function App() {
         onDeletePackage={handleDeletePackage}
       />
 
-      {activePackage && (
-        <CanvaAudioModal
-          isOpen={isCanvaAudioOpen}
-          pkg={activePackage}
-          onClose={() => setIsCanvaAudioOpen(false)}
-        />
-      )}
+      {/* Global Social Media & Graphic Generator Modal */}
+      <SocialGeneratorModal
+        isOpen={isGlobalSocialOpen}
+        onClose={() => setIsGlobalSocialOpen(false)}
+        initialTopic={activePackage ? activePackage.job.topic : 'How to Review Contractor Estimates & Spot Hidden Markups'}
+        initialPresenterId={activePackage ? activePackage.presenter.id : 'tool-cowboy'}
+      />
 
       {/* Footer */}
       <footer className="border-t border-slate-800/80 bg-slate-950 py-6 mt-12">

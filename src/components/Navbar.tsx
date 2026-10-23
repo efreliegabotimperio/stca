@@ -2,12 +2,11 @@ import {
   History,
   User,
   Users,
-  ExternalLink,
   PlusCircle,
-  Zap,
   LogOut,
   Sun,
   Moon,
+  Share2,
 } from 'lucide-react';
 import type { UserSession } from '../types/blog';
 import type { AppTheme } from '../services/themeService';
@@ -20,10 +19,10 @@ interface NavbarProps {
   onOpenLogin: () => void;
   onOpenHistory: () => void;
   onNewGenerator: () => void;
+  onOpenSocialStudio?: () => void;
   onOpenUserManagement: () => void;
   onLogout: () => void;
 }
-
 
 export const Navbar: React.FC<NavbarProps> = ({
   user,
@@ -33,6 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenLogin,
   onOpenHistory,
   onNewGenerator,
+  onOpenSocialStudio,
   onOpenUserManagement,
   onLogout,
 }) => {
@@ -80,18 +80,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="sm:hidden">Create</span>
           </button>
 
-          {/* Canva Direct Link Shortcut */}
-          <a
-            href="https://canva.com"
-            target="_blank"
-            rel="noreferrer"
-            className="hidden md:flex items-center space-x-1.5 px-3 py-2 text-xs font-medium text-slate-300 bg-slate-800/60 hover:bg-slate-700/80 border border-slate-700/60 rounded-lg transition"
-            title="Open Canva Brand Kit & Templates"
-          >
-            <Zap className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Canva Templates</span>
-            <ExternalLink className="w-3 h-3 text-slate-400" />
-          </a>
+          {/* Social Media Studio Button */}
+          {onOpenSocialStudio && (
+            <button
+              onClick={onOpenSocialStudio}
+              title="Auto-Generate Social Media Captions & Graphic"
+              className="flex items-center space-x-1.5 px-3 py-2 text-xs sm:text-sm font-semibold text-slate-200 bg-slate-900/90 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/50 rounded-lg shadow-sm transition active:scale-95"
+            >
+              <Share2 className="w-4 h-4 text-amber-400" />
+              <span className="hidden md:inline">Social & Graphic</span>
+            </button>
+          )}
+
+
 
           {/* Theme Mode Toggle (Dark / Light) */}
           <button
